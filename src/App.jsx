@@ -77,7 +77,7 @@ const App = () => {
       <footer className="bg-gray-900 border-t border-gray-800 mt-12 py-6">
         <div className="container mx-auto px-4 text-center text-gray-500">
           <p>CricketStream.live &copy; {new Date().getFullYear()} - All rights reserved</p>
-          <p className="mt-2 text-sm">This is a demo React application for live cricket streaming platform</p>
+          <p className="mt-2 text-sm">This is a live cricket streaming platform</p>
         </div>
       </footer>
     </div>
