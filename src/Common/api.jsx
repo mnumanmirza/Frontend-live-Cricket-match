@@ -5,7 +5,7 @@ axios.defaults.withCredentials = true;  // ✅ globally set once
 
 // Use local backend when developing in VS Code (localhost/127.0.0.1).
 // Change `localBackend` if your backend runs on a different port or IP.
-const defaultBackend = "";
+const defaultBackend = "backend-live-cricket-match-production.up.railway.app";
 const localBackend = "http://127.0.0.1:8080";
 
 const isLocalRun = typeof window !== 'undefined' && (
