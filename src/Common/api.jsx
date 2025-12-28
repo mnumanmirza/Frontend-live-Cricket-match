@@ -1,4 +1,4 @@
-// Frontend/common/api.js
+// Frontend/src/Common/api.jsx
 import axios from 'axios';
 
 axios.defaults.withCredentials = true;  // ✅ globally set once
@@ -13,7 +13,7 @@ const isLocalRun = typeof window !== 'undefined' && (
   window.location.hostname === '127.0.0.1'
 );
 
-const backendDomin = isLocalRun ? localBackend : defaultBackend;
+const backendDomin = isLocalRun ? localBackend : `https://${defaultBackend}`;
 
 const SummaryApi = {
   signUP: {
@@ -36,9 +36,18 @@ const SummaryApi = {
     method: 'get'
   },
 
-  allUser: {
-    url: `${backendDomin}/api/all-user`,
+  // Users (admin)
+  allUsers: {
+    url: `${backendDomin}/api/all-users`,
     method: 'get'
+  },
+  changeUserRole: (id) => ({
+    url: `${backendDomin}/api/user/${id}/role`,
+    method: 'put'
+  }),
+  refresh_token: {
+    url: `${backendDomin}/api/refresh-token`,
+    method: 'post'
   },
 
   updateUser: {
@@ -113,5 +122,6 @@ const SummaryApi = {
 
 // Helper function to format the delete project URL
 export const getDeleteProjectUrl = (id) => `${backendDomin}/api/projects/${id}`;
+export const getDeleteUserUrl = (id) => `${backendDomin}/api/delete-user/${id}`;
 
 export default SummaryApi;

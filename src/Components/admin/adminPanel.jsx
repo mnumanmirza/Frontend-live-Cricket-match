@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import SummaryApi from '../../Common/api.jsx';
 import { 
   FaUsers, 
   FaCreditCard, 
@@ -81,33 +83,22 @@ const AdminPanel = () => {
     const refreshAndFetch = async () => {
       setLoadingUsers(true);
       setUsersError('');
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       try {
         // Attempt to refresh JWT from server so role changes are reflected
         try {
-          const refreshRes = await fetch(`${apiBase}/api/refresh-token`, { method: 'POST', credentials: 'include' });
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json();
-            if (!refreshData.error && refreshData.data && refreshData.data.user) {
-              const user = refreshData.data.user;
-              localStorage.setItem('userRole', user.role || 'GENERAL');
-            }
+          const refreshRes = await axios({ method: SummaryApi.refresh_token.method, url: SummaryApi.refresh_token.url });
+          const refreshData = refreshRes?.data;
+          if (!refreshData?.error && refreshData?.data?.user) {
+            const user = refreshData.data.user;
+            localStorage.setItem('userRole', user.role || 'GENERAL');
           }
         } catch (e) {
           console.warn('Token refresh failed (continuing):', e.message || e);
         }
-
-        const res = await fetch(`${apiBase}/api/all-users`, { credentials: 'include' });
-        if (!res.ok) {
-          throw new Error(`Users endpoint returned ${res.status}`);
-        }
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-          throw new Error('Users endpoint did not return JSON');
-        }
-        const data = await res.json();
-        if (data.error) throw new Error(data.message || 'Failed to load users');
-        setUsers(Array.isArray(data.data) ? data.data : []);
+        const res = await axios({ method: SummaryApi.allUsers.method, url: SummaryApi.allUsers.url });
+        const data = res?.data;
+        if (data?.error) throw new Error(data.message || 'Failed to load users');
+        setUsers(Array.isArray(data?.data) ? data.data : []);
       } catch (err) {
         console.error('Failed to fetch users:', err);
         setUsersError(err.message || 'Failed to load users');
@@ -464,16 +455,12 @@ const AdminPanel = () => {
                               value={user.role || 'GENERAL'}
                               onChange={async (e) => {
                                 const newRole = e.target.value;
-                                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
                                 // Try to refresh server JWT first so role in cookie is up-to-date
                                 try {
-                                  const refreshRes = await fetch(`${apiBase}/api/refresh-token`, { method: 'POST', credentials: 'include' });
-                                  if (refreshRes.ok) {
-                                    const refreshData = await refreshRes.json().catch(() => ({}));
-                                    if (refreshData && refreshData.data && refreshData.data.user) {
-                                      localStorage.setItem('userRole', refreshData.data.user.role || 'GENERAL');
-                                    }
+                                  const refreshRes = await axios({ method: SummaryApi.refresh_token.method, url: SummaryApi.refresh_token.url });
+                                  const refreshData = refreshRes?.data || {};
+                                  if (refreshData && refreshData.data && refreshData.data.user) {
+                                    localStorage.setItem('userRole', refreshData.data.user.role || 'GENERAL');
                                   }
                                 } catch (refreshErr) {
                                   console.warn('Token refresh before role-change failed:', refreshErr?.message || refreshErr);
@@ -489,14 +476,10 @@ const AdminPanel = () => {
                                 // optimistic update
                                 setUsers(prev => prev.map(u => u._id === user._id ? { ...u, role: newRole } : u));
                                 try {
-                                  const res = await fetch(`${apiBase}/api/user/${user._id}/role`, {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    credentials: 'include',
-                                    body: JSON.stringify({ role: newRole }),
-                                  });
-                                  const data = await res.json().catch(() => ({}));
-                                  if (!res.ok || data.error) throw new Error(data.message || `Failed to change role (status ${res.status})`);
+                                  const roleEndpoint = SummaryApi.changeUserRole(user._id);
+                                  const res = await axios({ method: roleEndpoint.method, url: roleEndpoint.url, data: { role: newRole } });
+                                  const data = res?.data || {};
+                                  if (!res?.status || res.status >= 400 || data.error) throw new Error(data.message || `Failed to change role (status ${res?.status})`);
 
                                   // If changing our own role, update local storage
                                   const meEmail = localStorage.getItem('userEmail');

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import SummaryApi from '../Common/api.jsx';
 
 const LoginModal = ({ show, onClose, onLogin }) => {
   const [email, setEmail] = useState('');
@@ -8,32 +10,20 @@ const LoginModal = ({ show, onClose, onLogin }) => {
 
   if (!show) return null;
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const res = await fetch(`${apiBase}/api/signin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.message || 'Login failed');
+      const signinRes = await axios({ method: SummaryApi.signIn.method, url: SummaryApi.signIn.url, data: { email, password } });
+      const signinData = signinRes?.data || {};
+      if (signinData?.error) throw new Error(signinData.message || 'Login failed');
 
       // fetch user details using cookie set by signin
-      const userRes = await fetch(`${apiBase}/api/user-details`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      const userData = await userRes.json();
-      if (!userRes.ok || userData.error) throw new Error(userData.message || 'Failed to fetch user');
+      const userRes = await axios({ method: SummaryApi.current_user.method, url: SummaryApi.current_user.url });
+      const userData = userRes?.data || {};
+      if (userData?.error) throw new Error(userData.message || 'Failed to fetch user');
 
       const user = userData.data || {};
       onLogin({ name: user.name, email: user.email, profilePic: user.profilePic, mobile: user.mobile, role: user.role });

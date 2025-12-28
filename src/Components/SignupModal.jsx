@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import SummaryApi from '../Common/api.jsx';
 
 const SignupModal = ({ show, onClose, onSignup }) => {
   const [name, setName] = useState('');
@@ -18,8 +20,6 @@ const SignupModal = ({ show, onClose, onSignup }) => {
   }, [avatarPreview]);
 
   if (!show) return null;
-
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0] || null;
@@ -52,13 +52,9 @@ const SignupModal = ({ show, onClose, onSignup }) => {
       formData.append('password', password);
       if (profilePic) formData.append('profilePic', profilePic);
 
-      const res = await fetch(`${apiBase}/api/signup`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Signup failed');
+      const res = await axios({ method: SummaryApi.signUP.method, url: SummaryApi.signUP.url, data: formData, headers: { 'Content-Type': 'multipart/form-data' } });
+      const data = res?.data || {};
+      if (data?.error) throw new Error(data.message || 'Signup failed');
 
       onSignup({ name: data.data.name, email: data.data.email, profilePic: data.data.profilePic, mobile: data.data.mobile, role: data.data.role });
     } catch (err) {

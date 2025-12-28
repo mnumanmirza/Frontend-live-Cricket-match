@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import SummaryApi from '../Common/api.jsx';
 import { 
   FaTv, 
   FaUser, 
@@ -89,22 +91,19 @@ const Header = ({ onEnterAdmin }) => {
       // Try to refresh server-side token to ensure role in cookie matches DB
       (async () => {
         try {
-          const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-          const refreshRes = await fetch(`${apiBase}/api/refresh-token`, { method: 'POST', credentials: 'include' });
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json().catch(() => ({}));
-            if (refreshData && refreshData.data && refreshData.data.user) {
-              const user = refreshData.data.user;
-              localStorage.setItem('userRole', user.role || 'GENERAL');
-              setUserRole(user.role || 'GENERAL');
-              if (user.email) {
-                localStorage.setItem('userEmail', user.email);
-                setUserEmail(user.email);
-              }
-              if (user.name) {
-                localStorage.setItem('userName', user.name);
-                setUserName(user.name);
-              }
+          const res = await axios({ method: SummaryApi.refresh_token.method, url: SummaryApi.refresh_token.url });
+          const data = res?.data || {};
+          if (data && data.data && data.data.user) {
+            const user = data.data.user;
+            localStorage.setItem('userRole', user.role || 'GENERAL');
+            setUserRole(user.role || 'GENERAL');
+            if (user.email) {
+              localStorage.setItem('userEmail', user.email);
+              setUserEmail(user.email);
+            }
+            if (user.name) {
+              localStorage.setItem('userName', user.name);
+              setUserName(user.name);
             }
           }
         } catch (e) {
